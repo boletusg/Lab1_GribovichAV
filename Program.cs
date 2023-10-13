@@ -22,10 +22,6 @@ namespace lab1_registration2
 
             Log.Information("Завершенние программы");
             Log.CloseAndFlush();
-
-            //сделать логирование заместо консоль врайт лайн
-            //сделать один класс / публичный метод, остальные приватными
-            //метод получает 3 строки, выдает 2 строки (успех/неуспех, текст ошибки)
         }
         public static void readData()
         {
@@ -37,24 +33,26 @@ namespace lab1_registration2
             string password2 = Console.ReadLine();
             Console.WriteLine(" ");
 
-            WriteFile(login, password, password2);
+            CheckRegistration(login, password, password2);
         }
-        public static void WriteFile(string login, string password, string password2)
+        public static void CheckRegistration(string login, string password, string password2)
         {
-            bool number = ValidNumber(login);
-            bool email = ValidEmail(login);
-            bool nickname = ValidNickname(login);
+            (bool, string) number = ValidNumber(login);
 
-            bool log = ValidationLogin(login, email, number, nickname);
-            bool passwd = validationPasswd(password);
-            bool repeat = repeatPasswd(password, password2);
 
-            if (passwd == false)
+            (bool, string) email = ValidEmail(login);
+            (bool, string) nickname = ValidNickname(login);
+
+            (bool, string) log = ValidationLogin(login, email, number.Item1, nickname);
+            (bool, string) passwd = validationPasswd(password);
+            (bool, string) repeat = repeatPasswd(password, password2);
+
+            if (passwd != (true, ""))
             {
                 Log.Information("Пароль не соответствует формату");
             }
 
-            if (log == true & passwd == true & repeat == true)
+            if (log == (true, "") & passwd == (true, "") & repeat == (true, ""))
             {
                 try
                 {
@@ -108,32 +106,32 @@ namespace lab1_registration2
             }
             return log;
         }
-        public static bool ValidationLogin(string login, bool email, bool number, bool nickname)
+        public static (bool, string) ValidationLogin(string login, (bool, string) email, bool number, (bool, string) nickname)
         {
             //проверка на совпадение с существующими логинами
             bool saveLog = ReadLoginList(login);
             if (saveLog == false)
             {
-                if (number == true || email == true || nickname == true)
+                if (number == true || email == (true, "") || nickname == (true, ""))
                 {
                     //передача логина для записи в файл
                     Log.Information("Проверка логина на соответствие формату завершилась успехом");
-                    return true;
+                    return (true, "");
 
                 }
                 else
                 {
                     Log.Information("Несоответствие логина формату данных");
-                    return false;
+                    return (false, "Несоответствие логина формату данных");
                 }
             }
             else
             {
                 Log.Information("Ошибка: данный логин уже зарегистрирован другим пользователем");
-                return false;
+                return (false, "Ошибка: данный логин уже зарегистрирован другим пользователем");
             }
         }
-        public static bool ValidNumber(string login)
+        public static (bool, string) ValidNumber(string login)
         {
             // Создаем регулярное выражение для проверки номера телефона
             Regex regex = new Regex(@"^\+\d-\d{3}-\d{3}-\d{4}$");
@@ -145,11 +143,15 @@ namespace lab1_registration2
             {
                 //сообщение об ошибке формата телефона в консоль
                 Log.Information("Логин не соответствует формату номера телефона");
+                return (false, "Логин не соответствует формату номера телефона");
             }
+            else
+            {
 
-            return number;
+                return (number, "");
+            }
         }
-        public static bool ValidEmail(string login)
+        public static (bool, string) ValidEmail(string login)
         {
             // Паттерн для проверки соответствия формату email
             string pattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
@@ -164,11 +166,16 @@ namespace lab1_registration2
             {
                 //сообщение об ошибке формата email в консоль
                 Log.Information("Логин не соответствует формату электронной почты");
+                return (false, "Логин не соответствует формату электронной почты");
+            }
+            else
+            {
+                return (email, "");
             }
 
-            return email;
+            
         }
-        public static bool ValidNickname(string login)
+        public static (bool, string) ValidNickname(string login)
         {
             string log = login;
             bool nickname;
@@ -202,66 +209,67 @@ namespace lab1_registration2
             {
                 //сообщение об ошибке формата ника в консоль
                 Log.Information("Логин не соответствует формату никнейма");
+                return (false, "Логин не соответствует формату никнейма");
             }
 
-            return nickname;
+            return (nickname, "");
         }
-        public static bool validationPasswd(string password)
+        public static (bool, string) validationPasswd(string password)
         {
             // Проверка на минимальную длину
             if (password.Length < 7)
             {
                 Log.Information("Количество символов в пароле должно быть более семи");
-                return false;
+                return (false, "Количество символов в пароле должно быть более семи");
             }
 
             // Проверка на наличие хотя бы одной буквы в верхнем регистре
             if (!Regex.IsMatch(password, "[А-Я]"))
             {
                 Log.Information("Логин должен содержать хотя бы одну букву в верхнем регистре");
-                return false;
+                return (false, "Логин должен содержать хотя бы одну букву в верхнем регистре");
             }
 
             // Проверка на наличие хотя бы одной буквы в нижнем регистре
             if (!Regex.IsMatch(password, "[а-я]"))
             {
                 Log.Information("Логин должен содержать хотя бы одну букву в нижнем регистре");
-                return false;
+                return (false, "Логин должен содержать хотя бы одну букву в нижнем регистре");
             }
 
             // Проверка на наличие хотя бы одной цифры
             if (!Regex.IsMatch(password, @"\d"))
             {
                 Log.Information("Логин должен содержать хотя бы одну цифру");
-                return false;
+                return (false, "Логин должен содержать хотя бы одну цифру");
             }
 
             // Проверка на наличие хотя бы одного спецсимвола (допустимы только символы Юникода)
             if (!Regex.IsMatch(password, @"[\p{P}\p{S}]"))
             {
                 Log.Information("Логин должен содержать хотя бы один спецсимвол");
-                return false;
+                return (false, "Логин должен содержать хотя бы один спецсимвол");
             }
 
             // Проверка на наличие только кириллицы, цифр и спецсимволов
             if (!Regex.IsMatch(password, @"^[\p{Ll}\p{Lu}\p{M}\p{N}\p{P}\p{S}]+$"))
             {
                 Log.Information("Логин должен содержать только кириллицу, цифры и спецсимволы");
-                return false;
+                return (false, "Логин должен содержать только кириллицу, цифры и спецсимволы");
             }
 
-            return true;
+            return (true, "");
         }
-        public static bool repeatPasswd(string password, string password2)
+        public static (bool, string) repeatPasswd(string password, string password2)
         {
             if (password == password2)
             {
-                return true;
+                return (true, "");
             }
             else
             {
                 Log.Information("Пароли не совпадают");
-                return false;
+                return (false, "Пароли не совпадают");
             }
         }
         public static void MaskPasswd(string password, string password2)
